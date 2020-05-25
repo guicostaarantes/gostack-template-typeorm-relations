@@ -13,10 +13,33 @@ interface IRequest {
 
 @injectable()
 class CreateProductService {
-  constructor(private productsRepository: IProductsRepository) {}
+  constructor(
+    @inject('ProductsRepository')
+    private productsRepository: IProductsRepository,
+  ) {}
 
   public async execute({ name, price, quantity }: IRequest): Promise<Product> {
-    // TODO
+    if (price < 0) {
+      throw new AppError('Price cannot have a negative value.', 400);
+    }
+
+    if (quantity < 0) {
+      throw new AppError('Quantity cannot have a negative value.', 400);
+    }
+
+    const nameClash = await this.productsRepository.findByName(name);
+
+    if (nameClash) {
+      throw new AppError('Product with same name already exists.', 400);
+    }
+
+    const product = await this.productsRepository.create({
+      name,
+      price,
+      quantity,
+    });
+
+    return product;
   }
 }
 
